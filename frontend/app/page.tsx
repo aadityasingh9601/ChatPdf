@@ -48,6 +48,7 @@ export default function Home() {
       if (data.user) {
         setUserId(data.user.id);
         const res = await fetchData(data.user.id);
+        console.log(res?.message.data);
         setUploadedPdfs(res?.message.data);
       }
     };
@@ -234,7 +235,9 @@ export default function Home() {
         } transition-transform duration-200 ease-out`}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-zinc-100">
-          <h3 className="text-sm font-semibold text-zinc-900">Knowledge Sources</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">
+            Knowledge Sources
+          </h3>
           <button
             onClick={() => setSidebarOpen(false)}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
@@ -431,7 +434,6 @@ export default function Home() {
           </button>
         </div>
       </header>
-
       {/* Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* ─── Upload Area ─── */}
@@ -468,13 +470,11 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-zinc-700">
+                <p className="text-md font-medium text-zinc-700">
                   Drop your PDF here, or{" "}
                   <span className="text-indigo-500">browse</span>
                 </p>
-                <p className="text-xs text-zinc-400 mt-2">
-                  PDF only, max 5MB
-                </p>
+                <p className="text-sm text-zinc-500 mt-2">PDF only, max 5MB</p>
               </div>
               {fileError && (
                 <p className="text-xs text-red-500 text-center mt-3 animate-fade-in">
@@ -644,8 +644,18 @@ export default function Home() {
                           className="absolute -left-9 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50"
                           title="Resend"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
+                            />
                           </svg>
                         </button>
                       )}
@@ -655,8 +665,18 @@ export default function Home() {
                           className="absolute -right-9 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50"
                           title="Copy"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                            />
                           </svg>
                         </button>
                       )}

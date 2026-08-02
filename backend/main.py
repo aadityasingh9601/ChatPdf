@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from db import supabase
@@ -90,8 +90,13 @@ def user_query(userId:str, pdfName:str, query: str):
 
 # Fetch all user's pdfs.
 @app.get("/api/getpdfs")
-def get_pdfs(userId:str):
+def get_pdfs(userId:str, authorization: str = Header(...),):
     print(f"userId -> {userId}")
+    # Extract token
+    token = authorization.replace("Bearer ", "")
+    # print(token)
+    # Add user's token to supabase client
+    supabase.postgrest.auth(token)
     response = supabase.table("documents").select("id,file_name").eq("user_id",userId).execute()
     print(response)
     return response
