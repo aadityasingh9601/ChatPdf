@@ -12,6 +12,11 @@ class User(BaseModel):
     email: str 
     password: str
 
+class Message(BaseModel):
+    user_id: int
+    document_id: int
+    content: str | None = Field(default=None)
+
 app = FastAPI()
 
 app.add_middleware(
@@ -118,3 +123,17 @@ def delete_Pdf(pdfId:str, fileName:str, userId:str):
     response2 = supabase.table("documents").delete().eq("id",pdfId).execute()
     print(response2)
     return "pdf deleted successfully!"
+
+# Fetch chat messages.
+@app.get("/api/chat")
+def getChatMessages(chatId:str):
+    print(f"chatId -> {chatId}")
+    response = supabase.table("messages").select("id,role,content").eq("document_id",chatId).execute()
+    print(response)
+    return response
+
+@app.post("/api/chat")
+async def addChatMessage(messageData: Message):
+    print(messageData)
+    # response = supabase.table("User").insert(data.model_dump()).execute()
+    return "received on backend"

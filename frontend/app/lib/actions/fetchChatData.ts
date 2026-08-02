@@ -3,14 +3,15 @@
 import axios from "axios";
 import { createClient } from "../supabase/server";
 
-export const fetchData = async (userId: any) => {
+export const fetchChatData = async (chatId:any) => {
+  console.log("ChatId -> ", chatId);
   const supabase = createClient();
   const {
     data: { session },
   } = await (await supabase).auth.getSession();
 
   const res = await axios.get(
-    `http://localhost:8000/api/getpdfs?userId=${userId}`,
+    `http://localhost:8000/api/chat?chatId=${chatId}`,
     {
       headers: {
         Authorization: `Bearer ${session?.access_token}`,

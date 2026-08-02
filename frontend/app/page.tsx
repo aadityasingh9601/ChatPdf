@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { uploadData } from "./lib/actions/uploadData";
 import { fetchData } from "./lib/actions/fetchData";
+import { fetchChatData } from "./lib/actions/fetchChatData";
 import { deleteData } from "./lib/actions/deleteData";
 import { sendQuery } from "./lib/actions/sendQuery";
 import { createClient } from "./lib/supabase/client";
@@ -169,9 +170,12 @@ export default function Home() {
     setPdfStatus("idle");
   };
 
-  const handleSelectPdf = (pdf: { id: string; file_name: string }) => {
+  const handleSelectPdf = async (pdf: { id: string; file_name: string }) => {
     setPdfName(pdf.file_name);
     setPdfStatus("ready");
+    //Fetch chat messages from backend.
+    const res = await fetchChatData(pdf.id);
+    console.log("Chat messages", res);
     setMessages([]);
     setSidebarOpen(false);
   };
