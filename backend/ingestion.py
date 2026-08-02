@@ -34,7 +34,7 @@ def buildIndex(userId:str):
     
     
     # Transformations -> Chunking, extracting meta-data & embed each chunk.
-    text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=20)
+    text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
     # Set the text_splitter & embedding model globally.
     Settings.text_splitter = text_splitter
     Settings.embed_model = embed_model

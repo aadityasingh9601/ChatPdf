@@ -7,6 +7,7 @@ import { fetchData } from "./lib/actions/fetchData";
 import { deleteData } from "./lib/actions/deleteData";
 import { sendQuery } from "./lib/actions/sendQuery";
 import { createClient } from "./lib/supabase/client";
+import ReactMarkdown from 'react-markdown'
 
 interface Message {
   role: "user" | "assistant";
@@ -636,7 +637,7 @@ export default function Home() {
                             : "bg-white/90 backdrop-blur-sm text-zinc-700 rounded-bl-md shadow-sm"
                         }`}
                       >
-                        {msg.content}
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
                       {msg.role === "user" && msg.content && (
                         <button

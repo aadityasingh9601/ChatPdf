@@ -17,5 +17,6 @@ groq_client = OpenAI(
     api_key=os.getenv("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1",
 )
+
 llm2 = llm_factory("llama-3.3-70b-versatile", provider="openai", client=groq_client) 
 
