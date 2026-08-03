@@ -1,4 +1,4 @@
-# Logic to evaluate our RAG system.
+# Logic to evaluate the RAG pipeline.
 import json
 import os
 from dotenv import load_dotenv
@@ -65,7 +65,7 @@ print(f"\nBuilt evaluation dataset with {len(evaluation_dataset)} samples")
 
 # --- Evaluate ---
 groq_client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY_2"),
+    api_key=os.getenv("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1",
 )
 evaluator_llm = llm_factory("llama-3.3-70b-versatile", provider="openai", client=groq_client)

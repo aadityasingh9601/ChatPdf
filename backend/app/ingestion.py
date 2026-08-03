@@ -14,11 +14,8 @@ from llm import llm
 # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
-
 def buildIndex(userId:str):
     # Loading the documents.
-    # PDF Reader with `SimpleDirectoryReader`
-    # userId_fn = lambda userId: {"user_id": userId}
     parser = PDFReader()
     file_extractor = {".pdf": parser}
     documents = SimpleDirectoryReader(
@@ -27,14 +24,13 @@ def buildIndex(userId:str):
         "file_path": file_path
     }
     ).load_data()
-    
+
     # Transformations -> Chunking, extracting meta-data & embed each chunk.
     text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
     # Set the text_splitter & embedding model globally.
     Settings.text_splitter = text_splitter
     Settings.embed_model = embed_model
     Settings.llm = llm
-
     # With your text indexed, it is now technically ready for querying! However, embedding all your text again can be 
     # time-consuming and, if you are using a hosted LLM, it can also be expensive. To save time and money you will 
     # want to STORE YOUR EMBEDDINGS FIRST.
@@ -65,4 +61,3 @@ if __name__ == "__main__":
     buildIndex()
 
 # If you’ve already created an index, you can add new documents to your index using the insert method. See docs
-# We're all set, we can ask questions using our index.
