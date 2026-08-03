@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Header
+from fastapi import FastAPI, File, UploadFile, Body, Form, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from db import supabase
@@ -13,8 +13,9 @@ class User(BaseModel):
     password: str
 
 class Message(BaseModel):
-    user_id: int
-    document_id: int
+    user_id: str
+    document_id: str
+    role: str
     content: str | None = Field(default=None)
 
 app = FastAPI()
@@ -128,12 +129,13 @@ def delete_Pdf(pdfId:str, fileName:str, userId:str):
 @app.get("/api/chat")
 def getChatMessages(chatId:str):
     print(f"chatId -> {chatId}")
-    response = supabase.table("messages").select("id,role,content").eq("document_id",chatId).execute()
+    response = supabase.table("messages").select("role,content,created_at").eq("document_id",chatId).execute()
     print(response)
     return response
 
 @app.post("/api/chat")
-async def addChatMessage(messageData: Message):
+async def addChatMessage(messageData: Message = Body(...)):
     print(messageData)
-    # response = supabase.table("User").insert(data.model_dump()).execute()
-    return "received on backend"
+    response = supabase.table("messages").insert(messageData.model_dump()).execute()
+    print(response)
+    return response

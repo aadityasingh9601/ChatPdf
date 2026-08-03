@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import { uploadData } from "./lib/actions/uploadData";
 import { fetchData } from "./lib/actions/fetchData";
 import { fetchChatData } from "./lib/actions/fetchChatData";
+import { newChatMessage } from "./lib/actions/newChatMessage";
 import { deleteData } from "./lib/actions/deleteData";
 import { sendQuery } from "./lib/actions/sendQuery";
 import { createClient } from "./lib/supabase/client";
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  createdAt: number;
 }
 
 type PdfStatus = "idle" | "selected" | "uploading" | "ready";
@@ -26,6 +28,7 @@ export default function Home() {
   const [pdfStatus, setPdfStatus] = useState<PdfStatus>("idle");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfName, setPdfName] = useState<string>("");
+  const [currPdf, setCurrPdf] = useState<{ id: string; file_name: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -117,37 +120,52 @@ export default function Home() {
     e.preventDefault();
     const question = input.trim();
     if (!question || isLoading) return;
-
-    const userMessage: Message = { role: "user", content: question };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: question, createdAt: Date.now() },
+    ]);
     setInput("");
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "", createdAt: Date.now() },
+    ]);
     setIsLoading(true);
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    //Save message to DB here.
+    await newChatMessage(userId, currPdf?.id, "user", question);
 
     try {
       const res = await sendQuery(userId, pdfName, question);
       const answer = res?.message?.answer || "No answer received.";
-
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           role: "assistant",
           content: answer,
+          createdAt: Date.now(),
         };
         return updated;
       });
+      setIsLoading(false);
+      //Save msg to DB.
+      await newChatMessage(userId, currPdf?.id, "assistant", answer);
     } catch {
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           role: "assistant",
           content: "Something went wrong! Please try again.",
+          createdAt: Date.now(),
         };
         return updated;
       });
+      //Save msg to DB.
+      await newChatMessage(
+        userId,
+        currPdf?.id,
+        "assistant",
+        "Something went wrong! Please try again.",
+      );
     }
-
-    setIsLoading(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -171,12 +189,14 @@ export default function Home() {
   };
 
   const handleSelectPdf = async (pdf: { id: string; file_name: string }) => {
+    setCurrPdf(pdf);
     setPdfName(pdf.file_name);
     setPdfStatus("ready");
     //Fetch chat messages from backend.
+
     const res = await fetchChatData(pdf.id);
-    console.log("Chat messages", res);
-    setMessages([]);
+    console.log("Chat messages", res.message);
+    setMessages(res.message.data);
     setSidebarOpen(false);
   };
 
@@ -194,16 +214,26 @@ export default function Home() {
 
   const handleResend = async (question: string) => {
     if (isLoading) return;
-    setMessages((prev) => [...prev, { role: "user", content: question }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: question, createdAt: Date.now() },
+    ]);
     setIsLoading(true);
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "", createdAt: Date.now() },
+    ]);
 
     try {
       const res = await sendQuery(userId, pdfName, question);
       const answer = res?.message?.answer || "No answer received.";
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "assistant", content: answer };
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: answer,
+          createdAt: Date.now(),
+        };
         return updated;
       });
     } catch {
@@ -212,6 +242,7 @@ export default function Home() {
         updated[updated.length - 1] = {
           role: "assistant",
           content: "Something went wrong! Please try again.",
+          createdAt: Date.now(),
         };
         return updated;
       });
