@@ -1,11 +1,16 @@
 from fastapi import FastAPI, File, UploadFile, Body, Form, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from db import supabase
+from app.db import supabase
 import os
 import shutil
-from query import answerUserQuery
-from ingestion import buildIndex
+from app.query import answerUserQuery
+from app.ingestion import buildIndex
+from dotenv import load_dotenv, dotenv_values
+
+load_dotenv() # Loading variables from dotenv file.
+
+frontend_url: str = os.getenv("FRONTEND_URL")
 
 class User(BaseModel):
     name: str | None = Field(default=None)
@@ -22,7 +27,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

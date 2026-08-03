@@ -1,14 +1,14 @@
 from llama_index.core import (VectorStoreIndex, SimpleDirectoryReader, Document, StorageContext, Settings)
 from llama_index.readers.file import PDFReader
 from llama_index.core.node_parser import SentenceSplitter
-from embeddings import embed_model
+from app.embeddings import embed_model
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 import textwrap
 import logging
 import sys
 import os
 from dotenv import load_dotenv, dotenv_values
-from llm import llm
+from app.llm import llm
 
 # Uncomment to see debug logs
 # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

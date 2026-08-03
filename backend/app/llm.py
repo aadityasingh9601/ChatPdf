@@ -7,7 +7,7 @@ load_dotenv()
 
 # You can use other gemini flash models too like gemini-3.5-flash-lite, gemini-3.1-flash-lite, gemini-2.5-flash-lite 
 
-key: str = os.getenv("GOOGLE_GEMINI_KEY")
+key: str = os.getenv("GOOGLE_GEMINI_KEY_2")
 
 llm = GoogleGenAI(
     model="gemini-3.5-flash-lite",

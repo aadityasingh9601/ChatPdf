@@ -3,7 +3,7 @@ from google.genai.types import EmbedContentConfig
 from dotenv import load_dotenv
 import os
 from typing import List, Optional
-from utils import helper
+from app.utils import helper
 load_dotenv()
 
 key: str = os.getenv("GOOGLE_GEMINI_KEY_2")

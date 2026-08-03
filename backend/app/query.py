@@ -2,8 +2,8 @@ from colorama import Fore, Back, Style
 from llama_index.core import VectorStoreIndex, StorageContext
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from embeddings import embed_model
-from llm import llm, llm2
+from app.embeddings import embed_model
+from app.llm import llm, llm2
 import os
 import textwrap
 from dotenv import load_dotenv

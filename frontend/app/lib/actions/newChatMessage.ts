@@ -17,7 +17,7 @@ export const newChatMessage = async (
   };
   //formData.append("user_id",data);
   const res = await axios.post(
-    `http://localhost:8000/api/chat`,
+    `${process.env.BACKEND_URL}/api/chat`,
     messageData,
     {},
   );

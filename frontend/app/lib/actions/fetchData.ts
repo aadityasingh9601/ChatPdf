@@ -10,7 +10,7 @@ export const fetchData = async (userId: any) => {
   } = await (await supabase).auth.getSession();
 
   const res = await axios.get(
-    `http://localhost:8000/api/getpdfs?userId=${userId}`,
+    `${process.env.BACKEND_URL}/api/getpdfs?userId=${userId}`,
     {
       headers: {
         Authorization: `Bearer ${session?.access_token}`,

@@ -303,7 +303,7 @@ export default function Home() {
         } transition-transform duration-200 ease-out`}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-zinc-100">
-          <h3 className="text-sm font-semibold text-zinc-900">
+          <h3 className="text-md font-semibold text-zinc-900">
             Knowledge Sources
           </h3>
           <button
@@ -339,7 +339,7 @@ export default function Home() {
                   className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
                     pdfName === pdf.file_name && pdfStatus === "ready"
                       ? "bg-indigo-50 text-indigo-700"
-                      : "text-zinc-600 hover:bg-zinc-50"
+                      : "text-zinc-600 hover:bg-zinc-200"
                   }`}
                   onClick={() => handleSelectPdf(pdf)}
                 >
@@ -364,7 +364,7 @@ export default function Home() {
                       e.stopPropagation();
                       setPdfToDelete(pdf);
                     }}
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-zinc-300 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all"
+                    className="w-6 h-6 rounded-md flex items-center justify-center text-red-500 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all"
                   >
                     <svg
                       className="w-3.5 h-3.5"
