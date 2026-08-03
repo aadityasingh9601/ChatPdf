@@ -9,17 +9,32 @@ import { newChatMessage } from "./lib/actions/newChatMessage";
 import { deleteData } from "./lib/actions/deleteData";
 import { sendQuery } from "./lib/actions/sendQuery";
 import { createClient } from "./lib/supabase/client";
+import { formatMessageTime } from "./lib/utils/formatTime";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
-  createdAt: number;
+  created_at: number | string;
+}
+
+interface Pdf {
+   id: string; file_name: string 
 }
 
 type PdfStatus = "idle" | "selected" | "uploading" | "ready";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const SELECTED_PDF_KEY = "selected-pdf";
+
+const normalizeMessages = (
+  rows: { role: "user" | "assistant"; content: string; created_at?: string }[],
+): Message[] =>
+  (rows ?? []).map((row) => ({
+    role: row.role,
+    content: row.content,
+    created_at: row.created_at ?? Date.now(),
+  }));
 
 export default function Home() {
   const router = useRouter();
@@ -28,7 +43,7 @@ export default function Home() {
   const [pdfStatus, setPdfStatus] = useState<PdfStatus>("idle");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfName, setPdfName] = useState<string>("");
-  const [currPdf, setCurrPdf] = useState<{ id: string; file_name: string }>();
+  const [currPdf, setCurrPdf] = useState<Pdf>({ id: "", file_name: "" });
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -53,12 +68,31 @@ export default function Home() {
       if (data.user) {
         setUserId(data.user.id);
         const res = await fetchData(data.user.id);
-        console.log(res?.message.data);
         setUploadedPdfs(res?.message.data);
+
+        const stored = window.localStorage.getItem("selected-pdf");
+        if (stored) {
+          try {
+            const pdf = JSON.parse(stored) as Pdf;
+            setCurrPdf(pdf);
+            setPdfName(pdf.file_name);
+            setPdfStatus("ready");
+            const chatRes = await fetchChatData(pdf.id);
+            setMessages(normalizeMessages(chatRes.message.data));
+          } catch {
+            window.localStorage.removeItem("selected-pdf");
+          }
+        }
       }
     };
     init();
   }, []);
+
+  useEffect(() => {
+    if (currPdf.id) {
+      window.localStorage.setItem(SELECTED_PDF_KEY, JSON.stringify(currPdf));
+    }
+  }, [currPdf]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,7 +139,6 @@ export default function Home() {
   const handleConfirmUpload = async () => {
     setPdfStatus("uploading");
     const res = await uploadData(userId, pdfFile);
-    console.log(res);
     setPdfStatus("ready");
   };
 
@@ -122,16 +155,16 @@ export default function Home() {
     if (!question || isLoading) return;
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: question, createdAt: Date.now() },
+      { role: "user", content: question, created_at: Date.now() },
     ]);
     setInput("");
     setMessages((prev) => [
       ...prev,
-      { role: "assistant", content: "", createdAt: Date.now() },
+      { role: "assistant", content: "", created_at: Date.now() },
     ]);
     setIsLoading(true);
     //Save message to DB here.
-    await newChatMessage(userId, currPdf?.id, "user", question);
+    await newChatMessage(userId, currPdf.id, "user", question);
 
     try {
       const res = await sendQuery(userId, pdfName, question);
@@ -141,27 +174,27 @@ export default function Home() {
         updated[updated.length - 1] = {
           role: "assistant",
           content: answer,
-          createdAt: Date.now(),
+          created_at: Date.now(),
         };
         return updated;
       });
       setIsLoading(false);
       //Save msg to DB.
-      await newChatMessage(userId, currPdf?.id, "assistant", answer);
+      await newChatMessage(userId, currPdf.id, "assistant", answer);
     } catch {
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           role: "assistant",
           content: "Something went wrong! Please try again.",
-          createdAt: Date.now(),
+          created_at: Date.now(),
         };
         return updated;
       });
       //Save msg to DB.
       await newChatMessage(
         userId,
-        currPdf?.id,
+        currPdf.id,
         "assistant",
         "Something went wrong! Please try again.",
       );
@@ -186,6 +219,8 @@ export default function Home() {
     setMessages([]);
     setFileError("");
     setPdfStatus("idle");
+    setCurrPdf({ id: "", file_name: "" });
+    window.localStorage.removeItem(SELECTED_PDF_KEY);
   };
 
   const handleSelectPdf = async (pdf: { id: string; file_name: string }) => {
@@ -195,19 +230,16 @@ export default function Home() {
     //Fetch chat messages from backend.
 
     const res = await fetchChatData(pdf.id);
-    console.log("Chat messages", res.message);
-    setMessages(res.message.data);
+    setMessages(normalizeMessages(res.message.data));
     setSidebarOpen(false);
   };
 
   const handleConfirmDelete = async () => {
-    console.log("Delete PDF:", pdfToDelete);
-    const res = await deleteData(
+    await deleteData(
       pdfToDelete?.id,
       pdfToDelete?.file_name,
       userId,
     );
-    console.log(res);
     setUploadedPdfs((prev) => prev.filter((p) => p.id !== pdfToDelete?.id));
     setPdfToDelete(null);
   };
@@ -216,12 +248,12 @@ export default function Home() {
     if (isLoading) return;
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: question, createdAt: Date.now() },
+      { role: "user", content: question, created_at: Date.now() },
     ]);
     setIsLoading(true);
     setMessages((prev) => [
       ...prev,
-      { role: "assistant", content: "", createdAt: Date.now() },
+      { role: "assistant", content: "", created_at: Date.now() },
     ]);
 
     try {
@@ -232,7 +264,7 @@ export default function Home() {
         updated[updated.length - 1] = {
           role: "assistant",
           content: answer,
-          createdAt: Date.now(),
+          created_at: Date.now(),
         };
         return updated;
       });
@@ -242,7 +274,7 @@ export default function Home() {
         updated[updated.length - 1] = {
           role: "assistant",
           content: "Something went wrong! Please try again.",
-          createdAt: Date.now(),
+          created_at: Date.now(),
         };
         return updated;
       });
@@ -673,6 +705,17 @@ export default function Home() {
                         }`}
                       >
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        {msg.content && (
+                          <div
+                            className={`mt-1.5 flex justify-end text-[11px] ${
+                              msg.role === "user"
+                                ? "text-white/70"
+                                : "text-zinc-400"
+                            }`}
+                          >
+                            {formatMessageTime(msg.created_at)}
+                          </div>
+                        )}
                       </div>
                       {msg.role === "user" && msg.content && (
                         <button
