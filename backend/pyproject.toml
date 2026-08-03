@@ -1,2 +1,7 @@
 [tool.fastapi]
 entrypoint = "app.main:app"
+
+[project]
+name = "chat-pdf"
+version = "0.1.0"
+requires-python = ">=3.12"
