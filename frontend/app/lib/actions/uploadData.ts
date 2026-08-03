@@ -3,8 +3,6 @@
 import axios from "axios";
 
 export const uploadData = async (userId:any,data: any) => {
-  console.log("User Id ->", userId)
-  console.log("data", data);
   const formData = new FormData();
   formData.append("file",data);
   const res = await axios.post(
@@ -13,7 +11,6 @@ export const uploadData = async (userId:any,data: any) => {
     {
     },
   );
-  console.log(res);
   return {
     success: true,
     message: res.data,

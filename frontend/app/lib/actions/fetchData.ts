@@ -17,7 +17,6 @@ export const fetchData = async (userId: any) => {
       },
     },
   );
-  console.log(res?.data);
   return {
     success: true,
     message: res.data,

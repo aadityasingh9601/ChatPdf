@@ -4,7 +4,6 @@ import axios from "axios";
 import { createClient } from "../supabase/server";
 
 export const fetchChatData = async (chatId:any) => {
-  console.log("ChatId -> ", chatId);
   const supabase = createClient();
   const {
     data: { session },

@@ -8,9 +8,6 @@ export const newChatMessage = async (
   role: any,
   content: any,
 ) => {
-  console.log("User Id ->", userId);
-  console.log(documentId);
-  console.log(role, content);
 
   const messageData = {
     user_id: userId,
@@ -24,7 +21,6 @@ export const newChatMessage = async (
     messageData,
     {},
   );
-  console.log(res);
   return {
     success: true,
     message: res.data,

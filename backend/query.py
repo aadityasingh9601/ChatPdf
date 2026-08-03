@@ -9,12 +9,7 @@ import textwrap
 from dotenv import load_dotenv
 load_dotenv()
 
-# print("Enter question ->")
-# userQuery = input()
-# print("AI searching the PDF...")
-
 def answerUserQuery(userId:str, pdfName:str, userQuery: str):
-    print(f"Received user query -> {userQuery}")
     vector_store = SupabaseVectorStore(
     postgres_connection_string=os.getenv("DATABASE_URL"),
     collection_name="embeddings",
@@ -35,5 +30,3 @@ def answerUserQuery(userId:str, pdfName:str, userQuery: str):
 
 if __name__ == "__main__":
     answerUserQuery()
-
-# print(textwrap.fill(str(response), 100))

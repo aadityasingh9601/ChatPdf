@@ -9,17 +9,20 @@ from ragas.dataset_schema import EvaluationDataset, SingleTurnSample
 from ragas.metrics._context_recall import ContextRecall
 from ragas.metrics._faithfulness import Faithfulness
 from ragas.metrics._factual_correctness import FactualCorrectness
+from ragas.metrics._answer_relevance import AnswerRelevancy
 
 from openai import OpenAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from llama_index.core import VectorStoreIndex, StorageContext, Settings
 from llama_index.vector_stores.supabase import SupabaseVectorStore
+from ragas.embeddings.base import LangchainEmbeddingsWrapper
 from embeddings import embed_model
 from llm import llm
 
 load_dotenv()
 
 # --- Load testset ---
-testset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "testset.json")
+testset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "testset_light.json")
 with open(testset_path) as f:
     testset_data = json.load(f)
 
@@ -60,13 +63,19 @@ for item in testset_data:
 evaluation_dataset = EvaluationDataset(samples=samples)
 print(f"\nBuilt evaluation dataset with {len(evaluation_dataset)} samples")
 
-
 # --- Evaluate ---
 groq_client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY"),
+    api_key=os.getenv("GROQ_API_KEY_2"),
     base_url="https://api.groq.com/openai/v1",
 )
 evaluator_llm = llm_factory("llama-3.3-70b-versatile", provider="openai", client=groq_client)
+
+ragas_embeddings = LangchainEmbeddingsWrapper(
+    GoogleGenerativeAIEmbeddings(
+        model="gemini-embedding-2-preview",
+        google_api_key=os.getenv("GOOGLE_GEMINI_KEY") or os.getenv("GEMINI_API_KEY"),
+    )
+)
 
 result = evaluate(
     dataset=evaluation_dataset,
@@ -74,6 +83,7 @@ result = evaluate(
         ContextRecall(llm=evaluator_llm),
         Faithfulness(llm=evaluator_llm),
         FactualCorrectness(llm=evaluator_llm),
+        AnswerRelevancy(llm=evaluator_llm, embeddings=ragas_embeddings),
     ],
 )
 

@@ -14,11 +14,8 @@ from llm import llm
 # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
-# print(embed_model)
-
 
 def buildIndex(userId:str):
-    print(f"Inside build_index, userId is -> {userId}")
     # Loading the documents.
     # PDF Reader with `SimpleDirectoryReader`
     # userId_fn = lambda userId: {"user_id": userId}
@@ -30,8 +27,6 @@ def buildIndex(userId:str):
         "file_path": file_path
     }
     ).load_data()
-
-    
     
     # Transformations -> Chunking, extracting meta-data & embed each chunk.
     text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
@@ -56,9 +51,7 @@ def buildIndex(userId:str):
     # Whatever model you chose, look up its dimension and pass that exact number.
     # The number must match exactly. If your model outputs 768 dimensions but your pgvector column is set to 1536, 
     # it will throw an error on insert.
-
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
     # per-index
     index = VectorStoreIndex.from_documents(
         documents, transformations=[text_splitter],
@@ -72,5 +65,4 @@ if __name__ == "__main__":
     buildIndex()
 
 # If you’ve already created an index, you can add new documents to your index using the insert method. See docs
-
 # We're all set, we can ask questions using our index.
