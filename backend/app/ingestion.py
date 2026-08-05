@@ -14,12 +14,15 @@ from app.llm import llm
 # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
+# Writable directory for temp PDF storage (see main.py). Defaults to /tmp/data.
+DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
+
 def buildIndex(userId:str):
     # Loading the documents.
     parser = PDFReader()
     file_extractor = {".pdf": parser}
     documents = SimpleDirectoryReader(
-        "./data", file_extractor=file_extractor, file_metadata=lambda file_path: {
+        DATA_DIR, file_extractor=file_extractor, file_metadata=lambda file_path: {
         "user_id": userId,
         "file_path": file_path
     }

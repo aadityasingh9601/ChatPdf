@@ -11,6 +11,7 @@ key: str = os.getenv("GEMINI_API_KEY")
 
 llm = GoogleGenAI(
     model="gemini-3.5-flash-lite",
+    api_key=key,
 )
 
 groq_client = OpenAI(

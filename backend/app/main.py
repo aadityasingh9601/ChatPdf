@@ -35,11 +35,15 @@ app.add_middleware(
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
+# Writable directory for temp PDF storage. On Vercel serverless only /tmp is
+# writable (the project dir is read-only). Override with DATA_DIR if needed.
+DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
+
 def saveFile(file: UploadFile = File(...)):
     # Create data directory if it doesn't exist
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     # Save file directly to data directory
-    file_path = f"data/{file.filename}"
+    file_path = os.path.join(DATA_DIR, file.filename)
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
@@ -79,7 +83,7 @@ async def upload_file(userId:str,file: UploadFile = File(...)):
     buildIndex(userId)
     # Save the document in documents table.
     res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename }).execute()
-    removeFile(f"data/{file.filename}")
+    removeFile(os.path.join(DATA_DIR, file.filename))
     return {
         "filename": file.filename,
         "content_type": file.content_type,

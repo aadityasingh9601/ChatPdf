@@ -430,10 +430,9 @@ When deploying, set the environment variables above in each service (Vercel proj
 
 ---
 
-## Roadmap
+## Author
 
-- [ ] Stream responses for lower perceived latency.
-- [ ] Multi-PDF chat (cross-document retrieval).
-- [ ] Show retrieved sources/citations in the chat UI.
-- [ ] Automated evaluation runs on each new ingestion.
-- [ ] S3/object-storage for PDFs instead of a local temp directory.
+- **GitHub**: [https://github.com/aadityasingh9601](https://github.com/aadityasingh9601)
+- **LinkedIn**: [https://www.linkedin.com/in/aadityasingh999](https://www.linkedin.com/in/aadityasingh999)
+- **X**: [https://x.com/AadityaSingh771](https://x.com/AadityaSingh771)
+- **Portfolio**: [https://aadityasingh.dev](https://aadityasingh.dev/)

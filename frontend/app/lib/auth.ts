@@ -6,7 +6,7 @@ export async function signUpNewUser(email: string, password: string) {
     email,
     password,
     options: {
-      emailRedirectTo: "http://localhost:3000",
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}`,
     },
   });
   return { data, error };
