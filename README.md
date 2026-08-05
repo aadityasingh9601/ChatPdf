@@ -45,7 +45,7 @@ Only free-tier AI providers are used: **Google Gemini** (embeddings + answer gen
 
 ## Features
 
-- **Email/password authentication** via Supabase Auth, with route protection through Next.js middleware.
+- **Email/password authentication** via Supabase Auth, with route protection through Next.js proxy.
 - **PDF upload** with drag-and-drop, client & server-side **5 MB** validation, and a guided upload/ready state machine.
 - **Per-user, per-document isolation** — every query is filtered by `user_id` + `file_name` before retrieval.
 - **RAG chat** with Markdown-rendered answers, typing indicator, resend & copy message actions.
@@ -226,9 +226,9 @@ chatPdf/
 │   │   └── lib/
 │   │       ├── auth.ts           # Sign-up / sign-in helpers
 │   │       ├── actions/          # Server Actions (axios → backend)
-│   │       ├── supabase/         # client / server / middleware helpers
+│   │       ├── supabase/         # client / server / proxy helpers
 │   │       └── utils/formatTime.ts
-│   ├── middleware.ts             # Auth route protection
+│   ├── proxy.ts                  # Auth route protection
 │   ├── .env                      # NEXT_PUBLIC_SUPABASE_*, BACKEND_URL
 │   └── package.json
 │
@@ -357,7 +357,7 @@ Open **http://localhost:3000**, sign up, upload a PDF, and start asking question
 
 ## How It Works (Step by Step)
 
-1. **Auth** — Sign up / sign in with email & password. Next.js middleware redirects unauthenticated users to `/auth`.
+1. **Auth** — Sign up / sign in with email & password. Next.js proxy redirects unauthenticated users to `/auth`.
 2. **Upload** — Drag & drop (or browse) a PDF. The client validates type + 5 MB size, then `uploadData()` posts it to FastAPI.
 3. **Index** — The backend runs the full ingestion pipeline (load → chunk → embed → store in pgvector) and registers the document.
 4. **Select** — Choose a PDF from the sidebar. The app fetches its chat history from the `messages` table and restores the conversation; the selection is saved to `localStorage` so it survives reloads.
