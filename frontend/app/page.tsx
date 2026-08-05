@@ -171,7 +171,7 @@ export default function Home() {
       const answer = res?.message?.answer || "No answer received.";
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = {
+        updated[updated?.length - 1] = {
           role: "assistant",
           content: answer,
           created_at: Date.now(),
@@ -184,7 +184,7 @@ export default function Home() {
     } catch {
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = {
+        updated[updated?.length - 1] = {
           role: "assistant",
           content: "Something went wrong! Please try again.",
           created_at: Date.now(),
@@ -261,7 +261,7 @@ export default function Home() {
       const answer = res?.message?.answer || "No answer received.";
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = {
+        updated[updated?.length - 1] = {
           role: "assistant",
           content: answer,
           created_at: Date.now(),
@@ -271,7 +271,7 @@ export default function Home() {
     } catch {
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = {
+        updated[updated?.length - 1] = {
           role: "assistant",
           content: "Something went wrong! Please try again.",
           created_at: Date.now(),
@@ -327,7 +327,7 @@ export default function Home() {
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
-          {uploadedPdfs.length === 0 ? (
+          {uploadedPdfs?.length === 0 ? (
             <div className="px-4 py-8 text-center">
               <p className="text-xs text-zinc-400">Add a PDF to get started</p>
             </div>
@@ -666,7 +666,7 @@ export default function Home() {
         {/* ─── Chat Messages ─── */}
         {pdfStatus === "ready" && (
           <div className="flex-1 overflow-y-auto min-h-0 px-4 py-6">
-            {messages.length === 0 ? (
+            {messages?.length === 0 ? (
               <div className="flex flex-1 items-center justify-center h-full min-h-[300px]">
                 <div className="text-center animate-fade-in">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/60 backdrop-blur-sm mb-3 shadow-sm">
