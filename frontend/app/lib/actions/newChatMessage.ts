@@ -8,7 +8,6 @@ export const newChatMessage = async (
   role: any,
   content: any,
 ) => {
-
   const messageData = {
     user_id: userId,
     document_id: documentId,
@@ -17,7 +16,7 @@ export const newChatMessage = async (
   };
   //formData.append("user_id",data);
   const res = await axios.post(
-    `/api/chat`,
+    `${process.env.BACKEND_URL}/api/chat`,
     messageData,
     {},
   );

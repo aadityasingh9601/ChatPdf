@@ -10,7 +10,7 @@ export const fetchChatData = async (chatId:any) => {
   } = await (await supabase).auth.getSession();
 
   const res = await axios.get(
-    `/api/chat?chatId=${chatId}`,
+    `${process.env.BACKEND_URL}/api/chat?chatId=${chatId}`,
     {
       headers: {
         Authorization: `Bearer ${session?.access_token}`,
