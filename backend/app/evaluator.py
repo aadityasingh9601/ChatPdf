@@ -73,7 +73,7 @@ evaluator_llm = llm_factory("llama-3.3-70b-versatile", provider="openai", client
 ragas_embeddings = LangchainEmbeddingsWrapper(
     GoogleGenerativeAIEmbeddings(
         model="gemini-embedding-2-preview",
-        google_api_key=os.getenv("GOOGLE_GEMINI_KEY") or os.getenv("GEMINI_API_KEY"),
+        google_api_key=os.getenv("GEMINI_API_KEY"),
     )
 )
 

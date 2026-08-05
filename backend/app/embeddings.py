@@ -6,7 +6,7 @@ from typing import List, Optional
 from app.utils import helper
 load_dotenv()
 
-key: str = os.getenv("GOOGLE_GEMINI_KEY_2")
+key: str = os.getenv("GEMINI_API_KEY")
 
 TARGET_DIM = 768
 

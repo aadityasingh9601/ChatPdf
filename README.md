@@ -313,7 +313,6 @@ DATABASE_URL=postgresql://postgres.<host>:<password>@aws-0-<region>.pooler.supab
 
 # Google Gemini (free tier)
 GEMINI_API_KEY=<your-gemini-api-key>
-GOOGLE_GEMINI_KEY_2=<your-gemini-api-key>  # used by embeddings.py
 
 # Groq (free tier) — testset generation & evaluation
 GROQ_API_KEY=<your-groq-api-key>
