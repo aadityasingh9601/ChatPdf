@@ -30,7 +30,7 @@ const SELECTED_PDF_KEY = "selected-pdf";
 const normalizeMessages = (
   rows: { role: "user" | "assistant"; content: string; created_at?: string }[],
 ): Message[] =>
-  (rows ?? []).map((row) => ({
+  (rows ?? [])?.map((row) => ({
     role: row.role,
     content: row.content,
     created_at: row.created_at ?? Date.now(),
@@ -333,7 +333,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="space-y-0.5 px-2">
-              {uploadedPdfs.map((pdf) => (
+              {uploadedPdfs?.map((pdf) => (
                 <div
                   key={pdf.id}
                   className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
@@ -691,7 +691,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="max-w-2xl mx-auto space-y-6">
-                {messages.map((msg, i) => (
+                {messages?.map((msg, i) => (
                   <div
                     key={i}
                     className={`animate-fade-in flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
