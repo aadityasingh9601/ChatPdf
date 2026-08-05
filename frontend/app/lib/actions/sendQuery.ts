@@ -4,7 +4,7 @@ import axios from "axios";
 
 export const sendQuery = async (userId: any, pdfName: any, userQuery: any) => {
   const res = await axios.get(
-    `${process.env.BACKEND_URL}/api/userquery?userId=${userId}&pdfName=${pdfName}&query=${userQuery}`,
+    `/api/userquery?userId=${userId}&pdfName=${pdfName}&query=${userQuery}`,
     {},
   );
   return {
