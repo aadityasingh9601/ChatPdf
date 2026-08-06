@@ -4,6 +4,9 @@ entrypoint = "app.main:app"
 [tool.vercel]
 entrypoint = "app.main:app"
 
+[tool.vercel.scripts]
+build = "python build.py"
+
 [project]
 name = "chat-pdf"
 version = "0.1.0"
