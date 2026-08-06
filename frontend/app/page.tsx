@@ -10,6 +10,7 @@ import { deleteData } from "./lib/actions/deleteData";
 import { sendQuery } from "./lib/actions/sendQuery";
 import { createClient } from "./lib/supabase/client";
 import { formatMessageTime } from "./lib/utils/formatTime";
+import Spinner from "./components/Spinner";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -61,14 +62,24 @@ export default function Home() {
     id: string;
     file_name: string;
   } | null>(null);
+  const [isPdfsLoading, setIsPdfsLoading] = useState(true);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser();
       if (data.user) {
         setUserId(data.user.id);
-        const res = await fetchData(data.user.id);
-        setUploadedPdfs(res?.message.data);
+        setIsPdfsLoading(true);
+        try {
+          const res = await fetchData(data.user.id);
+          setUploadedPdfs(res?.message.data);
+        } catch {
+          setUploadedPdfs([]);
+        } finally {
+          setIsPdfsLoading(false);
+        }
 
         const stored = window.localStorage.getItem("selected-pdf");
         if (stored) {
@@ -77,10 +88,13 @@ export default function Home() {
             setCurrPdf(pdf);
             setPdfName(pdf.file_name);
             setPdfStatus("ready");
+            setIsChatLoading(true);
             const chatRes = await fetchChatData(pdf.id);
             setMessages(normalizeMessages(chatRes.message.data));
           } catch {
             window.localStorage.removeItem("selected-pdf");
+          } finally {
+            setIsChatLoading(false);
           }
         }
       }
@@ -209,8 +223,14 @@ export default function Home() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/auth");
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      router.push("/auth");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const removePdf = () => {
@@ -227,11 +247,18 @@ export default function Home() {
     setCurrPdf(pdf);
     setPdfName(pdf.file_name);
     setPdfStatus("ready");
-    //Fetch chat messages from backend.
-
-    const res = await fetchChatData(pdf.id);
-    setMessages(normalizeMessages(res.message.data));
+    setMessages([]);
     setSidebarOpen(false);
+    setIsChatLoading(true);
+    //Fetch chat messages from backend.
+    try {
+      const res = await fetchChatData(pdf.id);
+      setMessages(normalizeMessages(res.message.data));
+    } catch {
+      setMessages([]);
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -327,7 +354,12 @@ export default function Home() {
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
-          {uploadedPdfs?.length === 0 ? (
+          {isPdfsLoading ? (
+            <div className="flex flex-col items-center gap-3 px-4 py-10 text-center animate-fade-in">
+              <Spinner className="w-5 h-5 text-indigo-400" />
+              <p className="text-xs text-zinc-400">Loading your PDFs...</p>
+            </div>
+          ) : uploadedPdfs?.length === 0 ? (
             <div className="px-4 py-8 text-center">
               <p className="text-xs text-zinc-400">Add a PDF to get started</p>
             </div>
@@ -496,9 +528,11 @@ export default function Home() {
           )}
           <button
             onClick={handleLogout}
-            className="text-sm font-medium text-zinc-500 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 transition-colors px-3.5 py-2 rounded-lg"
+            disabled={isLoggingOut}
+            className="flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 transition-colors px-3.5 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Logout
+            {isLoggingOut && <Spinner className="w-3.5 h-3.5" />}
+            {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
         </div>
       </header>
@@ -666,7 +700,14 @@ export default function Home() {
         {/* ─── Chat Messages ─── */}
         {pdfStatus === "ready" && (
           <div className="flex-1 overflow-y-auto min-h-0 px-4 py-6">
-            {messages?.length === 0 ? (
+            {isChatLoading ? (
+              <div className="flex flex-1 items-center justify-center h-full min-h-[300px]">
+                <div className="flex flex-col items-center gap-3 text-center animate-fade-in">
+                  <Spinner className="w-7 h-7 text-indigo-400" />
+                  <p className="text-sm text-white/70">Loading messages...</p>
+                </div>
+              </div>
+            ) : messages?.length === 0 ? (
               <div className="flex flex-1 items-center justify-center h-full min-h-[300px]">
                 <div className="text-center animate-fade-in">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/60 backdrop-blur-sm mb-3 shadow-sm">

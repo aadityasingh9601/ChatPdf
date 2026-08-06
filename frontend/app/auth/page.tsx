@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signUpNewUser, signInWithEmail } from "../lib/auth";
+import Spinner from "../components/Spinner";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -120,9 +121,16 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={!email.trim() || !password.trim() || isSubmitting}
-              className="w-full px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/25 mt-2"
+              className="w-full px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/25 mt-2 flex items-center justify-center gap-2"
             >
-              {mode === "signup" ? "Sign Up" : "Sign In"}
+              {isSubmitting && <Spinner className="w-4 h-4" />}
+              {isSubmitting
+                ? mode === "signup"
+                  ? "Signing up..."
+                  : "Signing in..."
+                : mode === "signup"
+                  ? "Sign Up"
+                  : "Sign In"}
             </button>
           </form>
         </div>
@@ -132,8 +140,8 @@ export default function AuthPage() {
           <p className="text-xs text-white/50 text-center mt-5">
             Existing account?{" "}
             <span
-              onClick={() => setMode("signin")}
-              className="text-white/80 hover:text-white cursor-pointer underline underline-offset-2"
+              onClick={() => !isSubmitting && setMode("signin")}
+              className={`text-white/80 hover:text-white cursor-pointer underline underline-offset-2 ${isSubmitting ? "pointer-events-none opacity-60" : ""}`}
             >
               Sign In
             </span>
@@ -142,8 +150,8 @@ export default function AuthPage() {
           <p className="text-xs text-white/50 text-center mt-5">
             Don&apos;t have an account?{" "}
             <span
-              onClick={() => setMode("signup")}
-              className="text-white/80 hover:text-white cursor-pointer underline underline-offset-2"
+              onClick={() => !isSubmitting && setMode("signup")}
+              className={`text-white/80 hover:text-white cursor-pointer underline underline-offset-2 ${isSubmitting ? "pointer-events-none opacity-60" : ""}`}
             >
               Sign up
             </span>
