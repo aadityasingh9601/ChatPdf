@@ -12,6 +12,7 @@ llama-index-vector-stores-supabase==0.5.0
 llama-index-embeddings-google-genai==0.5.1
 llama-index-llms-google-genai==0.9.6
 langchain-community==0.3.31
+pypdf==6.14.2
 
 google-genai==2.11.0
 langchain-google-genai==4.2.7

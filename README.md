@@ -46,7 +46,7 @@ Only free-tier AI providers are used: **Google Gemini** (embeddings + answer gen
 ## Features
 
 - **Email/password authentication** via Supabase Auth, with route protection through Next.js proxy.
-- **PDF upload** with drag-and-drop, client & server-side **5 MB** validation, and a guided upload/ready state machine.
+- **PDF upload** with drag-and-drop, client & server-side validation (**5 MB** per file, **50 pages** per file, **20 MB** total per user), and a guided upload/ready state machine.
 - **Per-user, per-document isolation** — every query is filtered by `user_id` + `file_name` before retrieval.
 - **RAG chat** with Markdown-rendered answers, typing indicator, resend & copy message actions.
 - **Persistent chat history** — messages stored in a `messages` table and restored per PDF on reload.
@@ -157,7 +157,7 @@ flowchart TD
 
 **Ingestion (upload)**
 1. The frontend sends the PDF (`FormData`) to `POST /api/upload?userId=...`.
-2. FastAPI validates the size (≤ 5 MB), saves the file to `backend/data/`, and calls `buildIndex(userId)`.
+2. FastAPI validates the file (≤ 5 MB per file, ≤ 50 pages, and ≤ 20 MB combined across the user's PDFs), saves the file to `backend/data/`, and calls `buildIndex(userId)`.
 3. `SimpleDirectoryReader` + `PDFReader` loads the PDF into raw `Document` objects, stamping each with `user_id` and `file_path` metadata.
 
 **Indexing (embed & store)**
@@ -262,8 +262,12 @@ create table if not exists public.documents (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   file_name text not null,
+  file_size bigint not null default 0,
   created_at timestamptz default now()
 );
+
+-- Existing installs (documents table already created without file_size):
+-- alter table public.documents add column if not exists file_size bigint not null default 0;
 
 -- Chat messages (one row per message, linked to a document)
 create table if not exists public.messages (
@@ -357,7 +361,7 @@ Open **http://localhost:3000**, sign up, upload a PDF, and start asking question
 ## How It Works (Step by Step)
 
 1. **Auth** — Sign up / sign in with email & password. Next.js proxy redirects unauthenticated users to `/auth`.
-2. **Upload** — Drag & drop (or browse) a PDF. The client validates type + 5 MB size, then `uploadData()` posts it to FastAPI.
+2. **Upload** — Drag & drop (or browse) a PDF. The client validates type + 5 MB size + 50-page limit + 20 MB combined total, then `uploadData()` posts it to FastAPI.
 3. **Index** — The backend runs the full ingestion pipeline (load → chunk → embed → store in pgvector) and registers the document.
 4. **Select** — Choose a PDF from the sidebar. The app fetches its chat history from the `messages` table and restores the conversation; the selection is saved to `localStorage` so it survives reloads.
 5. **Ask** — Type a question. The frontend optimistically shows your message, calls `sendQuery()`, and streams the answer in once ready. Both messages are persisted.

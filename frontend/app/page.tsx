@@ -10,6 +10,7 @@ import { deleteData } from "./lib/actions/deleteData";
 import { sendQuery } from "./lib/actions/sendQuery";
 import { createClient } from "./lib/supabase/client";
 import { formatMessageTime } from "./lib/utils/formatTime";
+import { countPdfPages } from "./lib/utils/pdf";
 import Spinner from "./components/Spinner";
 import ReactMarkdown from "react-markdown";
 
@@ -20,12 +21,14 @@ interface Message {
 }
 
 interface Pdf {
-   id: string; file_name: string 
+   id: string; file_name: string; file_size?: number 
 }
 
 type PdfStatus = "idle" | "selected" | "uploading" | "ready";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 20 * 1024 * 1024;
+const MAX_PDF_PAGES = 50;
 const SELECTED_PDF_KEY = "selected-pdf";
 
 const normalizeMessages = (
@@ -56,7 +59,7 @@ export default function Home() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadedPdfs, setUploadedPdfs] = useState<
-    { id: string; file_name: string }[]
+    { id: string; file_name: string; file_size?: number }[]
   >([]);
   const [pdfToDelete, setPdfToDelete] = useState<{
     id: string;
@@ -119,7 +122,7 @@ export default function Home() {
     }
   }, [input]);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     setFileError("");
     if (file.type !== "application/pdf") {
       setFileError("Only PDF files are supported");
@@ -127,6 +130,26 @@ export default function Home() {
     }
     if (file.size > MAX_FILE_SIZE) {
       setFileError("File must be under 5MB");
+      return;
+    }
+    const currentTotal = (uploadedPdfs ?? []).reduce(
+      (sum, p) => sum + (p.file_size ?? 0),
+      0,
+    );
+    if (currentTotal + file.size > MAX_TOTAL_SIZE) {
+      setFileError("Total size of all PDFs must be under 20MB");
+      return;
+    }
+    try {
+      const pages = await countPdfPages(file);
+      if (pages > MAX_PDF_PAGES) {
+        setFileError(
+          `PDF has ${pages} pages; limit is ${MAX_PDF_PAGES} pages`,
+        );
+        return;
+      }
+    } catch {
+      setFileError("Could not read this PDF file");
       return;
     }
     setPdfFile(file);
@@ -151,9 +174,34 @@ export default function Home() {
   const handleUploadClick = () => fileInputRef.current?.click();
 
   const handleConfirmUpload = async () => {
+    const file = pdfFile;
+    if (!file) return;
     setPdfStatus("uploading");
-    const res = await uploadData(userId, pdfFile);
-    setPdfStatus("ready");
+    try {
+      const res = await uploadData(userId, file);
+      const data = res?.message?.data;
+      if (data?.id) {
+        setUploadedPdfs((prev) => [
+          ...prev,
+          {
+            id: data.id,
+            file_name: data.filename ?? file.name,
+            file_size: data.file_size ?? file.size,
+          },
+        ]);
+      }
+      setPdfStatus("ready");
+    } catch (err) {
+      const detail = (
+        err as { response?: { data?: { detail?: unknown } } }
+      )?.response?.data?.detail;
+      setFileError(
+        typeof detail === "string"
+          ? detail
+          : "Upload failed. Please try again.",
+      );
+      setPdfStatus("selected");
+    }
   };
 
   const handleCancelUpload = () => {
@@ -576,13 +624,16 @@ export default function Home() {
                   Drop your PDF here, or{" "}
                   <span className="text-indigo-500">browse</span>
                 </p>
-                <p className="text-sm text-zinc-500 mt-2">PDF only, max 5MB</p>
-              </div>
-              {fileError && (
+                <p className="text-sm text-zinc-500 mt-2">
+                  PDF only · max 5MB · max 50 pages
+                </p>
+                {fileError && (
                 <p className="text-xs text-red-500 text-center mt-3 animate-fade-in">
                   {fileError}
                 </p>
               )}
+              </div>
+              
               <input
                 ref={fileInputRef}
                 type="file"
@@ -657,6 +708,11 @@ export default function Home() {
                     Add PDF
                   </button>
                 </div>
+                {fileError && (
+                  <p className="text-xs text-red-500 text-center mt-3 animate-fade-in">
+                    {fileError}
+                  </p>
+                )}
               </div>
             </div>
           </div>

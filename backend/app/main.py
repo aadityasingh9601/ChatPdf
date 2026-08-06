@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from app.db import supabase
 import os
 import shutil
+import io
 from app.query import answerUserQuery
 from app.ingestion import buildIndex
 from dotenv import load_dotenv, dotenv_values
@@ -33,11 +34,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB per file
+MAX_TOTAL_SIZE = 20 * 1024 * 1024  # 20MB combined across all user PDFs
+MAX_PDF_PAGES = 50  # max pages per PDF
 
 # Writable directory for temp PDF storage. On Vercel serverless only /tmp is
 # writable (the project dir is read-only). Override with DATA_DIR if needed.
 DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
+
+def countPdfPages(contents: bytes) -> int:
+    from pypdf import PdfReader
+    reader = PdfReader(io.BytesIO(contents))
+    return len(reader.pages)
+
+def getUserTotalSize(userId: str) -> int:
+    response = supabase.table("documents").select("file_size").eq("user_id", userId).execute()
+    rows = response.data if response.data else []
+    return sum(row.get("file_size") or 0 for row in rows)
 
 def saveFile(file: UploadFile = File(...)):
     # Create data directory if it doesn't exist
@@ -78,15 +91,29 @@ async def upload_file(userId:str,file: UploadFile = File(...)):
     contents = await file.read()
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File size exceeds 5MB limit")
+    if len(contents) == 0:
+        raise HTTPException(status_code=422, detail="File is empty")
+    try:
+        page_count = countPdfPages(contents)
+    except Exception:
+        raise HTTPException(status_code=422, detail="Could not read PDF file")
+    if page_count > MAX_PDF_PAGES:
+        raise HTTPException(status_code=413, detail=f"PDF has {page_count} pages; limit is {MAX_PDF_PAGES} pages")
+    total_size = getUserTotalSize(userId)
+    if total_size + len(contents) > MAX_TOTAL_SIZE:
+        raise HTTPException(status_code=413, detail="Total size of all PDFs would exceed the 20MB limit")
     file.file.seek(0)
     saveFile(file)
     buildIndex(userId)
     # Save the document in documents table.
-    res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename }).execute()
+    res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename, "file_size": len(contents) }).execute()
     removeFile(os.path.join(DATA_DIR, file.filename))
+    row = res.data[0] if res.data else {}
     return {
         "filename": file.filename,
         "content_type": file.content_type,
+        "id": row.get("id"),
+        "file_size": len(contents),
     }
 
 # Ask query.
@@ -102,7 +129,7 @@ def get_pdfs(userId:str, authorization: str = Header(...),):
     token = authorization.replace("Bearer ", "")
     # Add user's token to supabase client
     supabase.postgrest.auth(token)
-    response = supabase.table("documents").select("id,file_name").eq("user_id",userId).execute()
+    response = supabase.table("documents").select("id,file_name,file_size").eq("user_id",userId).execute()
     return response
 
 # Delete user's pdfs.
