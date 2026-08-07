@@ -109,11 +109,12 @@ async def upload_file(userId:str,file: UploadFile = File(...)):
     res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename, "file_size": len(contents) }).execute()
     removeFile(os.path.join(DATA_DIR, file.filename))
     row = res.data[0] if res.data else {}
+    print(res)
     return {
-        "filename": file.filename,
+        "filename": res.data[0].file_name,
         "content_type": file.content_type,
-        "id": row.get("id"),
-        "file_size": len(contents),
+        "id": res.data[0].id,
+        "file_size": res.data[0].file_size,
     }
 
 # Ask query.

@@ -180,6 +180,7 @@ export default function Home() {
     try {
       const res = await uploadData(userId, file);
       const data = res?.message?.data;
+      console.log(data);
       if (data?.id) {
         setUploadedPdfs((prev) => [
           ...prev,

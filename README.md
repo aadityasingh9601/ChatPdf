@@ -45,7 +45,7 @@ Only free-tier AI providers are used: **Google Gemini** (embeddings + answer gen
 
 ## Features
 
-- **Email/password authentication** via Supabase Auth, with route protection through Next.js proxy.
+- **Google OAuth authentication** via Supabase Auth, with route protection through Next.js proxy.
 - **PDF upload** with drag-and-drop, client & server-side validation (**5 MB** per file, **50 pages** per file, **20 MB** total per user), and a guided upload/ready state machine.
 - **Per-user, per-document isolation** — every query is filtered by `user_id` + `file_name` before retrieval.
 - **RAG chat** with Markdown-rendered answers, typing indicator, resend & copy message actions.
@@ -95,7 +95,7 @@ flowchart LR
     end
 
     subgraph Supabase["Supabase"]
-        AUTH["Auth<br/>email / password"]
+        AUTH["Auth<br/>Google OAuth"]
         PG[("Postgres + pgvector<br/>documents · messages · embeddings")]
     end
 
