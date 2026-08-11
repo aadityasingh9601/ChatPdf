@@ -87,7 +87,7 @@ async def createUser(data:User):
 
 # Upload pdf.
 @app.post("/api/upload")
-async def upload_file(userId:str,file: UploadFile = File(...)):
+async def upload_file(userId:str,file: UploadFile = File(...), authorization: str = Header(...)):
     contents = await file.read()
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File size exceeds 5MB limit")
@@ -105,16 +105,20 @@ async def upload_file(userId:str,file: UploadFile = File(...)):
     file.file.seek(0)
     saveFile(file)
     buildIndex(userId)
+    # Extract token
+    token = authorization.replace("Bearer ", "")
+    # Add user's token to supabase client
+    supabase.postgrest.auth(token)
     # Save the document in documents table.
     res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename, "file_size": len(contents) }).execute()
     removeFile(os.path.join(DATA_DIR, file.filename))
     row = res.data[0] if res.data else {}
-    print(res)
+    print(row)
     return {
-        "filename": res.data[0].file_name,
+        "filename": row["file_name"],
         "content_type": file.content_type,
-        "id": res.data[0].id,
-        "file_size": res.data[0].file_size,
+        "id": row["id"],
+        "file_size": row["file_size"],
     }
 
 # Ask query.
