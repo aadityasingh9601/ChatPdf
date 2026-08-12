@@ -151,11 +151,15 @@ def delete_Pdf(pdfId:str, fileName:str, userId:str):
 
 # Fetch chat messages.
 @app.get("/api/chat")
-def getChatMessages(chatId:str):
+def getChatMessages(chatId:str, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    supabase.postgrest.auth(token)
     response = supabase.table("messages").select("role,content,created_at").eq("document_id",chatId).execute()
     return response
 
 @app.post("/api/chat")
-async def addChatMessage(messageData: Message = Body(...)):
+async def addChatMessage(messageData: Message = Body(...), authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    supabase.postgrest.auth(token)
     response = supabase.table("messages").insert(messageData.model_dump()).execute()
     return response
