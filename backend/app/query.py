@@ -9,7 +9,7 @@ import textwrap
 from dotenv import load_dotenv
 load_dotenv()
 
-def answerUserQuery(userId:str, pdfName:str, userQuery: str):
+def answerUserQuery(userId:str, pdfName:str, userQuery: str, prefer: str = "llm2"):
     vector_store = SupabaseVectorStore(
     postgres_connection_string=os.getenv("DATABASE_URL"),
     collection_name="embeddings",
@@ -21,8 +21,23 @@ def answerUserQuery(userId:str, pdfName:str, userQuery: str):
     MetadataFilter(key="user_id", value=userId),
     MetadataFilter(key="file_name", value=pdfName)
 ])
-    query_engine = index.as_query_engine(llm=llm, filters=filters)
-    response = query_engine.query(userQuery)
+
+    llms = {"llm": llm, "llm2": llm2}
+    primary = llms.get(prefer, llm2)
+    fallback = llm if primary is llm2 else llm2
+
+    def run(engine_llm):
+        query_engine = index.as_query_engine(llm=engine_llm, filters=filters)
+        return query_engine.query(userQuery)
+
+    # Use the preferred LLM first (llm2 = Groq by default). If it fails —
+    # e.g. the Groq free-tier quota is exhausted / rate limited — fall back
+    # to the other LLM (llm = Gemini) automatically.
+    try:
+        response = run(primary)
+    except Exception:
+        print(Fore.YELLOW + "Primary LLM failed (possibly exhausted/rate-limited), falling back to the other LLM.")
+        response = run(fallback)
 
     print(Fore.GREEN + str(response))
     return response
