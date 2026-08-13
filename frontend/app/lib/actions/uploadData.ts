@@ -20,7 +20,6 @@ export const uploadData = async (userId: any, data: any) => {
       },
     },
   );
-  console.log(res);
   return {
     success: true,
     message: res.data,

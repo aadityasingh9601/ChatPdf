@@ -21,7 +21,9 @@ interface Message {
 }
 
 interface Pdf {
-   id: string; file_name: string; file_size?: number 
+  id: string;
+  file_name: string;
+  file_size?: number;
 }
 
 type PdfStatus = "idle" | "selected" | "uploading" | "ready";
@@ -143,9 +145,7 @@ export default function Home() {
     try {
       const pages = await countPdfPages(file);
       if (pages > MAX_PDF_PAGES) {
-        setFileError(
-          `PDF has ${pages} pages; limit is ${MAX_PDF_PAGES} pages`,
-        );
+        setFileError(`PDF has ${pages} pages; limit is ${MAX_PDF_PAGES} pages`);
         return;
       }
     } catch {
@@ -179,23 +179,18 @@ export default function Home() {
     setPdfStatus("uploading");
     try {
       const res = await uploadData(userId, file);
-      const data = res?.message?.data;
-      console.log(data);
-      if (data?.id) {
-        setUploadedPdfs((prev) => [
-          ...prev,
-          {
-            id: data.id,
-            file_name: data.filename ?? file.name,
-            file_size: data.file_size ?? file.size,
-          },
-        ]);
-      }
+      const data = res?.message;
+      const newPdf = {
+        id: data.id,
+        file_name: data.filename ?? file.name,
+        file_size: data.file_size ?? file.size,
+      };
+      setUploadedPdfs((prev) => [...prev, newPdf]);
+      setCurrPdf(newPdf);
       setPdfStatus("ready");
     } catch (err) {
-      const detail = (
-        err as { response?: { data?: { detail?: unknown } } }
-      )?.response?.data?.detail;
+      const detail = (err as { response?: { data?: { detail?: unknown } } })
+        ?.response?.data?.detail;
       setFileError(
         typeof detail === "string"
           ? detail
@@ -311,11 +306,7 @@ export default function Home() {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteData(
-      pdfToDelete?.id,
-      pdfToDelete?.file_name,
-      userId,
-    );
+    await deleteData(pdfToDelete?.id, pdfToDelete?.file_name, userId);
     setUploadedPdfs((prev) => prev.filter((p) => p.id !== pdfToDelete?.id));
     setPdfToDelete(null);
   };
@@ -629,12 +620,12 @@ export default function Home() {
                   PDF only · max 5MB · max 50 pages
                 </p>
                 {fileError && (
-                <p className="text-xs text-red-500 text-center mt-3 animate-fade-in">
-                  {fileError}
-                </p>
-              )}
+                  <p className="text-xs text-red-500 text-center mt-3 animate-fade-in">
+                    {fileError}
+                  </p>
+                )}
               </div>
-              
+
               <input
                 ref={fileInputRef}
                 type="file"

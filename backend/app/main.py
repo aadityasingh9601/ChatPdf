@@ -114,6 +114,9 @@ async def upload_file(userId:str,file: UploadFile = File(...), authorization: st
     removeFile(os.path.join(DATA_DIR, file.filename))
     row = res.data[0] if res.data else {}
     print(row)
+    print(f"Row name -> {row["file_name"]}")
+    print(f"Row id -> {row["id"]}")
+    print(f"File Size -> {row["file_size"]}")
     return {
         "filename": row["file_name"],
         "content_type": file.content_type,
@@ -161,5 +164,6 @@ def getChatMessages(chatId:str, authorization: str = Header(...)):
 async def addChatMessage(messageData: Message = Body(...), authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     supabase.postgrest.auth(token)
+    print(messageData)
     response = supabase.table("messages").insert(messageData.model_dump()).execute()
     return response
