@@ -1,21 +1,13 @@
 "use server";
 
 import axios from "axios";
-import { createClient } from "../supabase/server";
+import { getAuthHeaders } from "../utils/getSession";
 
 export const fetchChatData = async (chatId:any) => {
-  const supabase = createClient();
-  const {
-    data: { session },
-  } = await (await supabase).auth.getSession();
-
+  const authHeaders = await getAuthHeaders();
   const res = await axios.get(
     `${process.env.BACKEND_URL}/api/chat?chatId=${chatId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${session?.access_token}`,
-      },
-    },
+    authHeaders
   );
   return {
     success: true,
