@@ -1,7 +1,7 @@
-from fastapi import FastAPI, File, UploadFile, Body, Form, HTTPException, Header
+from fastapi import FastAPI, Depends, File, UploadFile, Body, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from app.db import supabase
+from app.db import get_authenticated_supabase
 import os
 import shutil
 import io
@@ -47,7 +47,7 @@ def countPdfPages(contents: bytes) -> int:
     reader = PdfReader(io.BytesIO(contents))
     return len(reader.pages)
 
-def getUserTotalSize(userId: str) -> int:
+def getUserTotalSize(userId: str, supabase = Depends(get_authenticated_supabase)) -> int:
     response = supabase.table("documents").select("file_size").eq("user_id", userId).execute()
     rows = response.data if response.data else []
     return sum(row.get("file_size") or 0 for row in rows)
@@ -87,7 +87,7 @@ async def createUser(data:User):
 
 # Upload pdf.
 @app.post("/api/upload")
-async def upload_file(userId:str,file: UploadFile = File(...), authorization: str = Header(...)):
+async def upload_file(userId:str,file: UploadFile = File(...), supabase = Depends(get_authenticated_supabase)):
     contents = await file.read()
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File size exceeds 5MB limit")
@@ -99,24 +99,17 @@ async def upload_file(userId:str,file: UploadFile = File(...), authorization: st
         raise HTTPException(status_code=422, detail="Could not read PDF file")
     if page_count > MAX_PDF_PAGES:
         raise HTTPException(status_code=413, detail=f"PDF has {page_count} pages; limit is {MAX_PDF_PAGES} pages")
-    total_size = getUserTotalSize(userId)
+    total_size = getUserTotalSize(userId, supabase)
     if total_size + len(contents) > MAX_TOTAL_SIZE:
         raise HTTPException(status_code=413, detail="Total size of all PDFs would exceed the 20MB limit")
     file.file.seek(0)
     saveFile(file)
     buildIndex(userId)
-    # Extract token
-    token = authorization.replace("Bearer ", "")
-    # Add user's token to supabase client
-    supabase.postgrest.auth(token)
     # Save the document in documents table.
     res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename, "file_size": len(contents) }).execute()
     removeFile(os.path.join(DATA_DIR, file.filename))
     row = res.data[0] if res.data else {}
     print(row)
-    print(f"Row name -> {row["file_name"]}")
-    print(f"Row id -> {row["id"]}")
-    print(f"File Size -> {row["file_size"]}")
     return {
         "filename": row["file_name"],
         "content_type": file.content_type,
@@ -132,17 +125,13 @@ def user_query(userId:str, pdfName:str, query: str):
 
 # Fetch all user's pdfs.
 @app.get("/api/getpdfs")
-def get_pdfs(userId:str, authorization: str = Header(...),):
-    # Extract token
-    token = authorization.replace("Bearer ", "")
-    # Add user's token to supabase client
-    supabase.postgrest.auth(token)
+def get_pdfs(userId:str,supabase = Depends(get_authenticated_supabase)):
     response = supabase.table("documents").select("id,file_name,file_size").eq("user_id",userId).execute()
     return response
 
 # Delete user's pdfs.
 @app.delete("/api/pdf")
-def delete_Pdf(pdfId:str, fileName:str, userId:str):
+def delete_Pdf(pdfId:str, fileName:str, userId:str, supabase = Depends(get_authenticated_supabase)):
     # Delete embeddings from vector db.
     response1 = supabase.rpc("delete_embeddings", {
     "p_file_name": fileName,
@@ -154,16 +143,11 @@ def delete_Pdf(pdfId:str, fileName:str, userId:str):
 
 # Fetch chat messages.
 @app.get("/api/chat")
-def getChatMessages(chatId:str, authorization: str = Header(...)):
-    token = authorization.replace("Bearer ", "")
-    supabase.postgrest.auth(token)
+def getChatMessages(chatId:str, supabase = Depends(get_authenticated_supabase)):
     response = supabase.table("messages").select("role,content,created_at").eq("document_id",chatId).execute()
     return response
 
 @app.post("/api/chat")
-async def addChatMessage(messageData: Message = Body(...), authorization: str = Header(...)):
-    token = authorization.replace("Bearer ", "")
-    supabase.postgrest.auth(token)
-    print(messageData)
+async def addChatMessage(messageData: Message = Body(...), supabase = Depends(get_authenticated_supabase)):
     response = supabase.table("messages").insert(messageData.model_dump()).execute()
     return response
