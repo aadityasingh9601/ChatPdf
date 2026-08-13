@@ -307,6 +307,7 @@ export default function Home() {
 
   const handleConfirmDelete = async () => {
     await deleteData(pdfToDelete?.id, pdfToDelete?.file_name, userId);
+    removePdf();
     setUploadedPdfs((prev) => prev.filter((p) => p.id !== pdfToDelete?.id));
     setPdfToDelete(null);
   };
