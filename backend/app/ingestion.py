@@ -4,17 +4,11 @@ from llama_index.core.node_parser import SentenceSplitter
 from app.embeddings import embed_model
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 import textwrap
-import logging
-import sys
 import os
 from dotenv import load_dotenv, dotenv_values
 from app.llm import llm
 
-# Uncomment to see debug logs
-# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-# logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
-
-# Writable directory for temp PDF storage (see main.py). Defaults to /tmp/data.
+# Writable directory for temp PDF storage.
 DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
 
 def buildIndex(userId:str):
@@ -60,7 +54,5 @@ def buildIndex(userId:str):
     return index
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     buildIndex()
-
-# If you’ve already created an index, you can add new documents to your index using the insert method. See docs
