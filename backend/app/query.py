@@ -1,3 +1,4 @@
+import functools
 from colorama import Fore, Back, Style
 from llama_index.core import VectorStoreIndex, StorageContext
 from llama_index.vector_stores.supabase import SupabaseVectorStore
@@ -9,12 +10,19 @@ import textwrap
 from dotenv import load_dotenv
 load_dotenv()
 
+
+@functools.lru_cache(maxsize=1)
+def _get_vector_store() -> SupabaseVectorStore:
+    """Cache the vector store so we don't reopen a pgvector connection per query."""
+    return SupabaseVectorStore(
+        postgres_connection_string=os.getenv("DATABASE_URL"),
+        collection_name="embeddings",
+        dimension=768
+    )
+
+
 def answerUserQuery(userId:str, pdfName:str, userQuery: str, prefer: str = "llm2"):
-    vector_store = SupabaseVectorStore(
-    postgres_connection_string=os.getenv("DATABASE_URL"),
-    collection_name="embeddings",
-    dimension=768
-  )
+    vector_store = _get_vector_store()
 
     index = VectorStoreIndex.from_vector_store(vector_store, embed_model=embed_model)
     filters = MetadataFilters(filters=[
