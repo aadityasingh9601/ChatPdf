@@ -29,7 +29,7 @@ class TruncatedGoogleGenAIEmbedding(GoogleGenAIEmbedding):
 
 embed_model = TruncatedGoogleGenAIEmbedding(
     model_name="gemini-embedding-2-preview",
-    embed_batch_size=50,
+    embed_batch_size=20,
     api_key=key,
 )
 
