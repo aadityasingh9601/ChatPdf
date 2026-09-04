@@ -7,6 +7,8 @@ import shutil
 import io
 import gc
 import asyncio
+import uuid
+from pathlib import Path
 from app.query import answerUserQuery
 from app.ingestion import buildIndex
 from dotenv import load_dotenv, dotenv_values
@@ -54,13 +56,14 @@ def getUserTotalSize(userId: str, supabase = Depends(get_authenticated_supabase)
     rows = response.data if response.data else []
     return sum(row.get("file_size") or 0 for row in rows)
 
-def saveFile(file: UploadFile = File(...)):
+def saveFile(file: UploadFile = File(...), filename: str | None = None):
     # Create data directory if it doesn't exist
     os.makedirs(DATA_DIR, exist_ok=True)
     # Save file directly to data directory
-    file_path = os.path.join(DATA_DIR, file.filename)
+    file_path = os.path.join(DATA_DIR, filename or file.filename)
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
+    return file_path
 
 def removeFile(file_path:str):
     os.remove(file_path)
@@ -105,14 +108,22 @@ async def upload_file(userId:str,file: UploadFile = File(...), supabase = Depend
     if total_size + len(contents) > MAX_TOTAL_SIZE:
         raise HTTPException(status_code=413, detail="Total size of all PDFs would exceed the 20MB limit")
     file.file.seek(0)
-    saveFile(file)
+
+    # Use a unique, sanitized temp filename so concurrent uploads of the same
+    # name never collide or overwrite each other on disk, and the original
+    # (possibly malicious) filename is never used as a filesystem path.
+    safe_name = Path(file.filename).name
+    tmp_uuid = uuid.uuid4().hex
+    tmp_path = saveFile(file, tmp_uuid + "-" + safe_name)
+
     # Run the heavy, blocking RAG ingestion off the event loop so the process
-    # can still serve requests while the index is being built.
-    await asyncio.to_thread(buildIndex, userId)
+    # can still serve requests while the index is being built. Parse ONLY the
+    # specific uploaded file (unique tmp path) to avoid cross-contamination.
+    await asyncio.to_thread(buildIndex, tmp_path, userId, file.filename)
     gc.collect()
     # Save the document in documents table.
     res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename, "file_size": len(contents) }).execute()
-    removeFile(os.path.join(DATA_DIR, file.filename))
+    removeFile(os.path.join(DATA_DIR, tmp_uuid + "-" + safe_name))
     del contents
     gc.collect()
     row = res.data[0] if res.data else {}

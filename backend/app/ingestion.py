@@ -1,4 +1,4 @@
-from llama_index.core import (VectorStoreIndex, SimpleDirectoryReader, Document, StorageContext, Settings)
+from llama_index.core import (VectorStoreIndex, Document, StorageContext, Settings)
 from llama_index.readers.file import PDFReader
 from llama_index.core.node_parser import SentenceSplitter
 from app.embeddings import embed_model
@@ -9,19 +9,13 @@ from dotenv import load_dotenv
 from app.llm import llm
 load_dotenv()
 
-# Writable directory for temp PDF storage.
-DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
-
-def buildIndex(userId:str):
-    # Process one PDF at a time to keep peak memory bounded on small instances.
-    parser = PDFReader()
-    file_extractor = {".pdf": parser}
-    documents = SimpleDirectoryReader(
-        DATA_DIR, file_extractor=file_extractor, file_metadata=lambda file_path: {
-        "user_id": userId,
-        "file_path": file_path
-    }
-    ).load_data()
+def buildIndex(file_path: str, userId: str, fileName: str):
+    # Parse ONLY the specific uploaded file. Never scan a shared directory so we
+    # avoid cross-contamination between concurrent uploads and repeated in-memory
+    # copies of unrelated PDFs.
+    reader = PDFReader()
+    metadata = {"user_id": userId, "file_name": fileName, "file_path": file_path}
+    documents = reader.load_data(file_path, extra_info=metadata)
 
     # Transformations -> Chunking, extracting meta-data & embed each chunk.
     text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
@@ -36,16 +30,17 @@ def buildIndex(userId:str):
     )
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    # Build the index. This still holds docs + embeddings in RAM at once; the
-    # big wins come from streaming chunks to pgvector so we can delete the temp
-    # file sooner, and from running this off the event loop. See main.py.
     index = VectorStoreIndex.from_documents(
         documents, transformations=[text_splitter],
         storage_context=storage_context,
         show_progress=True
     )
 
-    # Free the large in-memory structures before this process serves anything else.
+    # Free large in-memory structures before this process serves anything else.
     del documents
     gc.collect()
     return index
+
+
+if __name__ == "__main__":
+    buildIndex()
