@@ -5,6 +5,8 @@ from app.db import get_authenticated_supabase
 import os
 import shutil
 import io
+import gc
+import asyncio
 from app.query import answerUserQuery
 from app.ingestion import buildIndex
 from dotenv import load_dotenv, dotenv_values
@@ -104,10 +106,15 @@ async def upload_file(userId:str,file: UploadFile = File(...), supabase = Depend
         raise HTTPException(status_code=413, detail="Total size of all PDFs would exceed the 20MB limit")
     file.file.seek(0)
     saveFile(file)
-    buildIndex(userId)
+    # Run the heavy, blocking RAG ingestion off the event loop so the process
+    # can still serve requests while the index is being built.
+    await asyncio.to_thread(buildIndex, userId)
+    gc.collect()
     # Save the document in documents table.
     res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename, "file_size": len(contents) }).execute()
     removeFile(os.path.join(DATA_DIR, file.filename))
+    del contents
+    gc.collect()
     row = res.data[0] if res.data else {}
     print(row)
     return {
