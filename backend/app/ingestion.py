@@ -40,11 +40,11 @@ def _stream_embed_and_store(nodes, vector_store):
     return count
 
 
-def buildIndex(file_path: str, userId: str, fileName: str):
+def buildIndex(file_path: str, userId: str, pdfId: str):
     # Parse ONLY the specific uploaded file. Never scan a shared directory so we
     # avoid cross-contamination between concurrent uploads and repeated in-memory
     # copies of unrelated PDFs. load_data() returns one Document per page.
-    metadata = {"user_id": userId, "file_name": fileName, "file_path": file_path}
+    metadata = {"user_id": userId, "pdf_id": pdfId, "file_path": file_path}
     documents = PDFReader().load_data(file_path, extra_info=metadata)
 
     text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)

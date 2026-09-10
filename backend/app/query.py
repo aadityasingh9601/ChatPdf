@@ -21,13 +21,13 @@ def _get_vector_store() -> SupabaseVectorStore:
     )
 
 
-def answerUserQuery(userId:str, pdfName:str, userQuery: str, prefer: str = "llm2"):
+def answerUserQuery(userId:str, pdfId:str, userQuery: str, prefer: str = "llm2"):
     vector_store = _get_vector_store()
 
     index = VectorStoreIndex.from_vector_store(vector_store, embed_model=embed_model)
     filters = MetadataFilters(filters=[
     MetadataFilter(key="user_id", value=userId),
-    MetadataFilter(key="file_name", value=pdfName)
+    MetadataFilter(key="pdf_id", value=pdfId)
 ])
 
     llms = {"llm": llm, "llm2": llm2}

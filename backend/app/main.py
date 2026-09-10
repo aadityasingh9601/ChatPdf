@@ -40,7 +40,7 @@ app.add_middleware(
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB per file
 MAX_TOTAL_SIZE = 20 * 1024 * 1024  # 20MB combined across all user PDFs
-MAX_PDF_PAGES = 50  # max pages per PDF
+MAX_PDF_PAGES = 50  # max pages per PDF (You can increase it too based on how powerful your LLM model & pricing plan is)
 
 # Writable directory for temp PDF storage. On Vercel serverless only /tmp is
 # writable (the project dir is read-only). Override with DATA_DIR if needed.
@@ -116,17 +116,20 @@ async def upload_file(userId:str,file: UploadFile = File(...), supabase = Depend
     tmp_uuid = uuid.uuid4().hex
     tmp_path = saveFile(file, tmp_uuid + "-" + safe_name)
 
+    # Save the document in documents table first, so we get its unique id to use
+    # as the pdf_id metadata for embeddings.
+    res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename, "file_size": len(contents) }).execute()
+    row = res.data[0] if res.data else {}
+    pdf_id = row["id"]
+
     # Run the heavy, blocking RAG ingestion off the event loop so the process
     # can still serve requests while the index is being built. Parse ONLY the
     # specific uploaded file (unique tmp path) to avoid cross-contamination.
-    await asyncio.to_thread(buildIndex, tmp_path, userId, file.filename)
+    await asyncio.to_thread(buildIndex, tmp_path, userId, pdf_id)
     gc.collect()
-    # Save the document in documents table.
-    res = supabase.table("documents").insert({ "user_id": userId, "file_name": file.filename, "file_size": len(contents) }).execute()
     removeFile(os.path.join(DATA_DIR, tmp_uuid + "-" + safe_name))
     del contents
     gc.collect()
-    row = res.data[0] if res.data else {}
     print(row)
     return {
         "filename": row["file_name"],
@@ -137,8 +140,8 @@ async def upload_file(userId:str,file: UploadFile = File(...), supabase = Depend
 
 # Ask query.
 @app.get("/api/userquery")
-def user_query(userId:str, pdfName:str, query: str):
-    response = answerUserQuery(userId, pdfName, query)
+def user_query(userId:str, pdfId:str, query: str):
+    response = answerUserQuery(userId, pdfId, query)
     return {"answer": str(response)}
 
 # Fetch all user's pdfs.
@@ -149,10 +152,10 @@ def get_pdfs(userId:str,supabase = Depends(get_authenticated_supabase)):
 
 # Delete user's pdfs.
 @app.delete("/api/pdf")
-def delete_Pdf(pdfId:str, fileName:str, userId:str, supabase = Depends(get_authenticated_supabase)):
+def delete_Pdf(pdfId:str, userId:str, supabase = Depends(get_authenticated_supabase)):
     # Delete embeddings from vector db.
     response1 = supabase.rpc("delete_embeddings", {
-    "p_file_name": fileName,
+    "p_pdf_id": pdfId,
     "p_user_id": userId
     }).execute()
     # Delete records from normal db.
