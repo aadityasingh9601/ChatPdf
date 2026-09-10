@@ -225,7 +225,7 @@ export default function Home() {
     await newChatMessage(userId, currPdf.id, "user", question);
 
     try {
-      const res = await sendQuery(userId, pdfName, question);
+      const res = await sendQuery(userId, currPdf.id, question);
       const answer = res?.message?.answer || "No answer received.";
       setMessages((prev) => {
         const updated = [...prev];
@@ -306,7 +306,7 @@ export default function Home() {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteData(pdfToDelete?.id, pdfToDelete?.file_name, userId);
+    await deleteData(pdfToDelete?.id, userId);
     removePdf();
     setUploadedPdfs((prev) => prev.filter((p) => p.id !== pdfToDelete?.id));
     setPdfToDelete(null);
@@ -325,7 +325,7 @@ export default function Home() {
     ]);
 
     try {
-      const res = await sendQuery(userId, pdfName, question);
+      const res = await sendQuery(userId, currPdf.id, question);
       const answer = res?.message?.answer || "No answer received.";
       setMessages((prev) => {
         const updated = [...prev];

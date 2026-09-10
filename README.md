@@ -282,12 +282,12 @@ create table if not exists public.messages (
 -- (collection name: 'embeddings', dimension 768)
 
 -- RPC used by DELETE /api/pdf to purge a file's vectors
-create or replace function public.delete_embeddings(p_file_name text, p_user_id text)
+create or replace function public.delete_embeddings(p_pdf_id text, p_user_id text)
 returns void
 language sql
 as $$
   delete from embeddings
-  where (metadata ->> 'file_name') = p_file_name
+  where (metadata ->> 'pdf_id') = p_pdf_id
     and (metadata ->> 'user_id') = p_user_id;
 $$;
 ```
