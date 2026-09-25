@@ -7,3 +7,4 @@
 **/*.pdf
 **/venv
 **/__pycache__
+**/*.csv
