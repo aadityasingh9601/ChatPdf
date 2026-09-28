@@ -140,13 +140,13 @@ async def upload_file(userId:str,file: UploadFile = File(...), supabase = Depend
 
 # Ask query.
 @app.get("/api/userquery")
-def user_query(userId:str, pdfId:str, query: str):
+def user_query(userId:str, pdfId:str, query: str, supabase = Depends(get_authenticated_supabase)):
     response = answerUserQuery(userId, pdfId, query)
     return {"answer": str(response)}
 
 # Fetch all user's pdfs.
 @app.get("/api/getpdfs")
-def get_pdfs(userId:str,supabase = Depends(get_authenticated_supabase)):
+def get_pdfs(userId:str, supabase = Depends(get_authenticated_supabase)):
     response = supabase.table("documents").select("id,file_name,file_size").eq("user_id",userId).execute()
     return response
 
